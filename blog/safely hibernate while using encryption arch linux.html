@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang=en>
+
+<head>
+<meta charset=UTF-8>
+<meta name=viewport content='width=device-width'>
+
+<link rel=icon href=../images/favicon.ico type=image/x-icon>
+<link rel=stylesheet
+href=s.css?2021-08-20T10:00:14Z>
+
+</head>
+<body>
+		<div class=header>
+			<span>
+				<a href=../index.html><img src='../images/logo.png' width='64' height='64'></a>
+			</span>
+			<span>
+				<a href=index.html class=hbw><h3>Blog</h3></a>
+			</span>
+		</div>
+		<div class=content>
+<h1>Safely hibernating while using disk encryption</h1>
+<p>Previously, I had setup an encrypted swap space while doing <a href="arch%20linux%20full%20disk%20encryption%installation%guide.html">my Arch linux installation</a>. It worked well for my purpose. </p>
+<p>Although it worked well I faced a small issue, it took a long time to boot. During boot time the partition was encrypted on the fly and mounted,that added a few extra seconds to the boot time. </p>
+<p>Also, that does not support suspend to disk feature which I was aware of while setting it up and considered to be a non issue. </p>
+<p>While I still rarely suspend to disk or hibernate, chances have come up where hibernating the system would have been convenient  and long boot time not leave me slightly annoyed.</p>
+<p>As I did not encrypt my <code>/boot</code> partition, using initramfs to open a luks encrypted swap may prove to be a <a href="https://wiki.archlinux.org/index.php?title=Talk:Dm-crypt&amp;oldid=255742#Suspend_to_disk_instructions_are_insecure">security risk</a>.</p>
+<h3>Swapfile to the rescue</h3>
+<p>Using a swapfile proved to be the best option for me. It can be setup on an encrypted blockdevice's partition.</p>
+<p>First create a new swapfile</p>
+<p><code> dd if=/dev/zero of=/swapfile bs=1M count=2048 status=progress </code></p>
+<p>This will create a 2GB file <code>/swapfile</code>, you can adjust the size and location of the file according to your needs.</p>
+<p>Now set permissions and make the file into a swap</p>
+<p><code>chmod 600 /swapfile</code></p>
+<p><code>mkswap /swapfile</code></p>
+<p>Now remove any previous swap </p>
+<p><code>swapoff -a</code></p>
+<p>Now find the swap file offset</p>
+<p><code>filefrag -v /swapfile | awk '{ if($1==&quot;0:&quot;){print substr($4, 1, length($4)-2)} }'</code></p>
+<p>Now you just have to set boot parameters <code>resume</code> and <code>resume_offset</code> in your systemd-boot entry</p>
+<p><code>
+ title Arch Encrypted
+ linux /vmlinuz-linux
+ initrd /initramfs-linux.img
+ options rw cryptdevice=UUID=uuid of your disk partition(i.e. /dev/sdXy):name_of_your_device root=/dev/mapper/name_your_device resume=/dev/mapper/name_of_your_device resume_offset=(above output)
+</code></p>
+<p>Add your swapfile to <code>/etc/fstab</code> </p>
+<p><code>/swapfile none    swap    defaults 0 0</code></p>
+<p>Also add <code>resume</code> hook to <code>/etc/mkinitcpio.conf</code> file</p>
+<p>Don't forget to generate new initramfs using <code>mkinitcpio -p ...</code></p>
+<p>Now you are all set, reboot and everything should work as expected.</p>
+		</div>
+</body>
+</html>

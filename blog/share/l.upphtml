@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang=${LANG%%_*}>
+
+<head>
+#!
+case "$1" in
+./index.upphtml)
+#!
+<title>threeL's Blog</title>
+<meta name=description content='Latest Blog Posts'>
+#!
+;;
+./arch\ linux\ full\ disk\ encryption\ installation\ guide.upphtml)
+#!
+<title>Arch Installation with Full disk encryption</title>
+<meta name=description content='Blog Post'>
+#!
+;;
+./lain\ sddm\ theme.upphtml)
+#!
+<title>Serial experiments lain theme on SDDM</title>
+<meta name=description content='Blog Post'>
+#!
+;;
+esac
+#!
+<meta charset=${LANG##*.}>
+<meta name=viewport content='width=device-width'>
+
+<link rel=icon href=../images/favicon.ico type=image/x-icon>
+<link rel=stylesheet
+href=s.css?$(lmt -f '%Y-%m-%dT%H:%M:%SZ' s.css | cut -d' ' -f1)>
+
+</head>
+<body>
+		<div class=header>
+			<span>
+				<a href=../index.html><img src='../images/logo.png' width='64' height='64'></a>
+			</span>
+			<span>
+				<a href=index.html class=hbw><h3>Blog</h3></a>
+			</span>
+		</div>
+		<div class=content>
+			#!
+			pp "$1"
+			#!
+		</div>
+</body>
+</html>

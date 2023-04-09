@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang=en>
+
+<head>
+<title>Serial experiments lain theme on SDDM</title>
+<meta name=description content='Blog Post'>
+<meta charset=UTF-8>
+<meta name=viewport content='width=device-width'>
+
+<link rel=icon href=../images/favicon.ico type=image/x-icon>
+<link rel=stylesheet
+href=s.css?2021-07-31T12:15:48Z>
+<style>
+	.container {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  padding-top: 56.25%; /* 16:9 Aspect Ratio */
+}
+
+.responsive-iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+}</style>
+</head>
+<body>
+		<div class=header>
+			<span>
+				<a href=../index.html><img src='../images/logo.png' width='64' height='64'></a>
+			</span>
+			<span>
+				<a href=index.html class=hbw><h3>Blog</h3></a>
+			</span>
+		</div>
+		<div class=content>
+<h1>Making linux login beautiful with sddm and lain</h1>
+<p>Customization potential on linux has always awed me. It has always been a favourite passtime of mine to make my setup look like a retro system or a sci-fi system.</p>
+<p>Few days ago while browsing the web I stumbled upon <a href="https://gitlab.com/mixedCase/sddm-lain-wired-theme">this repo</a>  showcasing a sddm login screen inspired by 1998 anime <a href="https://myanimelist.net/anime/339/Serial_Experiments_Lain">"Serial Experiments Lain"</a>.</p>
+<p>I was ecstatic,I like that show to the point of using lain as my profile pic across various platforms. 
+I needed to have that on my laptop asap.</p>
+<p>I installed the theme and when trying it out I found that all the elements were way too big for my screen size(1366*786). I quickly got to work and scaled down the elements and adjusted the qml code to add some of my customizations.
+I managed to achieve the following:
+<div class="container"> 
+  <iframe class="responsive-iframe" src="https://www.youtube.com/embed/M-p7cHx4OM0"></iframe>
+</div>
+</p>
+<p>The code can be found on <a href="https://github.com/lll2yu/sddm-lain-wired-theme">my github repo</a>.</p>
+<p>You can install and try it yourself easily. I have made an <a href="https://aur.archlinux.org/packages/sddm-lain-wired-theme">AUR package</a> for Archlinux users, you can install it with <code>makepkg</code> or using an AUR helper.</p>
+<p>Using <code>makepkg</code>:</p>
+<p><pre><code>
+git clone https://aur.archlinux.org/sddm-lain-wired-theme.git
+cd sddm-lain-wired-theme
+makepkg -Ccsi
+</code>
+</pre>
+<h4>Install the optional dependencies if  you want sound.</h4>
+</p>
+<p>Installation is pretty straight forward for other GNU/Linux distros too
+<ul>
+<li>Make sure you have sddm installed and configured as your default login manager.</li>
+<li>Install the dependencies <code>qt5-multimedia</code><code> &amp; </code><code>qt5-quickcontrols</code> using your package manager.</li>
+<li>Wav audio codecs are needed to play the sound, make sure you have package(s) that fulfill that installed. </li>
+<li>Download the <a href="https://github.com/lll2yu/sddm-lain-wired-theme/releases/latest">latest release</a></li>
+<li>Decompress the <code>*.zip</code> or <code>*.tar.gz</code> file </li>
+<li>Copy all files and directories into <code>/usr/share/sddm/themes/sddm-lain-wired-theme/</code> or open a terminal and run <code>sudo cp -r sddm-lain-wired-theme /usr/share/sddm/themes</code></li>
+</ul>
+</p>
+<h3>Setting as default theme</h3>
+<p>First make sure you have sddm installed and configured as your default display manager</p>
+<p>If using systemd</p>
+<pre>
+<code>
+sudo systemctl enable sddm.service
+</code></pre><p>
+Make sure other display managers like lightdm,gdm,etc are disabled</p>
+<pre><code>
+sudo systemctl disable lightdm.service
+</code></pre>
+<p>Now,
+- Open up your configuration file <code>/etc/sddm.conf</code> and set <code>sddm-lain-wired-theme</code> as your current theme</p>
+<pre><code>
+[Theme]
+# Current theme name
+Current=sddm-lain-wired-theme
+	</code></pre>
+<p>Now you are all set. Enjoy the aesthetic.
+</p>
+<p>Open an <a href="https://github.com/lll2yu/sddm-lain-wired-theme/issues">issue</a> on github if you face any problem.</p>
+		</div>
+</body>
+</html>

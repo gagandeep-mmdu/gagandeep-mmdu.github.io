@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang=en>
+
+<head>
+<title>Arch Installation with Full disk encryption</title>
+<meta name=description content='Blog Post'>
+<meta charset=UTF-8>
+<meta name=viewport content='width=device-width'>
+
+<link rel=icon href=../images/favicon.ico type=image/x-icon>
+<link rel=stylesheet
+href=s.css?2021-07-31T12:15:48Z>
+
+</head>
+<body>
+		<div class=header>
+			<span>
+				<a href=../index.html><img src='../images/logo.png' width='64' height='64'></a>
+			</span>
+			<span>
+				<a href=index.html class=hbw><h3>Blog</h3></a>
+			</span>
+		</div>
+		<div class=content>
+<h2>Arch Linux Installation with full disk encryption</h2>
+<h3>Written guide for <a href="https://www.youtube.com/watch?v=g3axA7KUMqM">video posted on my Youtube channel</a>.</h3>
+<h4>Note that if you follow these notes to setup encrypted swap then you won't be able to hibernate your machine as this type of swap won't support doing that. </h4>
+<h4>If you want hibernation support consider using <a href="https://wiki.archlinux.org/index.php/Dm-crypt/Swap_encryption#Using_a_swap_file">swapfiles</a> or <a href="https://wiki.archlinux.org/index.php/Dm-crypt/Swap_encryption#LVM_on_LUKS">LVM on LUKS</a> or follow <a href="https://wiki.archlinux.org/index.php/Dm-crypt/Swap_encryption#mkinitcpio_hook">this wiki</a>.</h4>
+<h5>Please note that you <em>MUST</em> ensure that you have made sure that your drive(s) are <a href="https://wiki.archlinux.org/index.php/Dm-crypt/Drive_preparation">prepared</a> for encryption.</h5>
+<p>First check if you are booted using UEFI (Legacy bios work too [bootloader installation may be different] )</p>
+<pre><code> ls /sys/firmware/efi</code></pre>
+<p>Also make sure that you are connected to the internet</p>
+<pre><code> ping archlinux.org    </code></pre>
+<p>If you are on wired the connection will be setup automatically ,for wireless use wifi-menu or iwctl</p>
+<p>Now Partition the disk (use gdisk if using GPT OR fdisk if using MBR), I'm using GPT here.</p>
+<pre><code> gdisk /dev/sdX</code></pre>
+<p>Where X denotes the drive where you want to do the installation e.g. a,b,c....
+Partition your disk(s) according to your requirements</p>
+<p>Format the partition you want to use as ESP (required for UEFI as bootloader will be installed there) as FAT32</p>
+<pre><code> mkfs.vfat /dev/sdXy</code></pre>
+<p>where X is your device letter and y is your partition number.</p>
+<p>Now lets encrypt our drive(s)/partition(s)</p>
+<pre><code> cryptsetup -y -v -s 512 -h sha512 --use-urandom luksFormat --type luks2 /dev/sdXy</code></pre>
+<p>where X is your device letter and y is your partition number.</p>
+<p>Note that you may not need all these parameters, if unsure read the <a href="https://wiki.archlinux.org/index.php/Dm-crypt#Device_encryption">Arch Wiki</a> or go with the defaults (they are pretty good)</p>
+<pre><code> cryptsetup -y -v /dev/sdXy (using the same command with default options)</code></pre>
+<p>Make sure you set a <em>STRONG PASSWORD</em>, without that encryption will be pointless.</p>
+<p>Repeat the same step for your seperate home partition (if using)</p>
+<pre><code> cryptsetup -y -v -s 512 -h sha512 --use-urandom luksFormat --type luks2 /dev/sdXy</code></pre>
+<p>where X is your device letter and y is your partition number.</p>
+<p>Now decrypt the partition(s) and mount the same</p>
+<pre><code> cryptsetup open /dev/sdXy name_your_device    &quot;example cryptroot&quot;</code></pre>
+<p>Format the drive with filesystem of your choice
+ 
+<pre><code> mkfs.ext4 /dev/mapper/name_your_device</code></pre>
+</p>
+<p>Make a directory to mount the partitions at (e.g. /mnt)</p>
+<pre><code> mkdir /mnt</code></pre>
+<p>Now mount the partition to the directory</p>
+<pre><code> mount /dev/mapper/name_your_device /mnt</code></pre>
+<p>Make directory for boot </p>
+<pre><code> mkdir /mnt/boot
+ Note that if using Grub you may need to mount ESP at /boot/EFI do accordingly</code></pre>
+<p>mount the ESP</p>
+<pre><code> mount /dev/sdXy /mnt/boot</code></pre>
+<p>Now just run the pacstrap script with directory with mounted drive(s) as target</p>
+<pre><code> pacstrap /mnt base </code></pre>
+<p>Now wait as pacman downloads and installs the packages.</p>
+<p>Now chroot to your new system </p>
+<pre><code> arch-chroot /mnt</code></pre>
+<p>Now we will generate a keyfile to use with our home partition</p>
+<pre><code> dd bs=1024 count=4 if=/dev/urandom of=/root/keycrypthome
+ </code></pre>
+<p>Now change the permissions of the file so that only root can read it
+<pre><code> chmod 0400 /root/keycrypthome</code></pre>
+</p>
+<p>Note that you can use external usb devices for storing the keyfile too, but make sure the device is encrypted or there is some other kind of placeholder on present</p>
+<h3>DON'T KEEP YOUR KEYFILE ON AN UNENCRYPTED DRIVE</h3>
+<p>Now add the keyfile to the crypt partition</p>
+<pre><code> cryptsetup luksAddKey /dev/sdXy /root/keycrypthome</code></pre>
+<p>Exit from the chroot environment and mount the partition</p>
+<pre><code> cryptsetup open /dev/sdXy name_your_device</code></pre>
+<p>Format the partition with a filesystem of your choice</p>
+<pre><code> mkfs.ext4 /dev/mapper/name_your_device</code></pre>
+<p>Mount the partition </p>
+<pre><code> mount /dev/mapper/name_your_device /mnt/home</code></pre>
+<p><code>arch-chroot</code> again</p>
+<p>now setup our encrypted swap </p>
+<pre><code> mkfs.ext4 -L name_your_swap /dev/sdXy 1M</code></pre>
+<p>Now edit the entries in <code>/etc/crypttab</code></p>
+<pre><code> swap	LABEL=name_your_swap	/dev/urandom	swap,cipher=aes-xts-plain64:sha512,size=512
+ &quot;Note that you should add cipher of your choice OR let the defaults be</code></pre>
+<p>Add entry for home partition too</p>
+<pre><code> name_your_device	UUID='your /dev/mapper/name_your_device uuid goes here'	/path/to/your/key</code></pre>
+<p>Exit out of the chroot environment</p>
+<pre><code> exit</code></pre>
+<p>Generate the fstab entries</p>
+<pre><code> genfstab -U /mnt &gt;&gt; /mnt/etc/fstab</code></pre>
+<p>Add your swap to the <code>/etc/fstab</code></p>
+<pre><code> /dev/mapper/swap	none	swap	defaults	0	0</code></pre>
+<p>Now, set your timezone, sync your hardware clock, set your locale, add users, set passwords, etc</p>
+<p>Now lets edit the <code>/etc/mkinitcpio.conf</code> to detect and unlock our encrypted drive(s)</p>
+<pre><code> add encrypt HOOK in your HOOKS section
+ HOOKS=(..... keyboard encrypt .......)</code></pre>
+<p>Now generate new initramfs</p>
+<pre><code> mkinitcpio -p linux</code></pre>
+<p>Now lets install the bootloader (systemd-boot)</p>
+<pre><code> bootctl install</code></pre>
+<p>Edit <code>/boot/loader/loader.conf</code> and add your default entries there</p>
+<pre><code> default arch   	&quot;or any one that you want&quot;
+ timeout 5</code></pre>
+<p>Edit <code>/boot/loader/entries/arch.conf</code> and add your parameters</p>
+<pre><code> title Arch Encrypted
+ linux /vmlinuz-linux
+ initrd /initramfs-linux.img
+ options rw cryptdevice=UUID=uuid of your disk partition i.e. /dev/sdXy:name_your_device root=/dev/mapper/name_your_device</code></pre>
+<p>Setup your network manager tool (i.e. NetworkManager, systemd-networkd, connman, etc)</p>
+<p>Now just reboot.</p>
+<p>The System should ask you for your password at boot time.</p>
+<p>Enjoy your freshly installed Encrypted arch linux install.</p>
+		</div>
+</body>
+</html>
